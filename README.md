@@ -1,70 +1,46 @@
-##AstraCV – AI-Powered Resume Analyzer
+# AstraCV – AI-Powered Resume Analyzer
 
 AstraCV is an AI-powered resume analysis platform that helps users evaluate and improve their resumes using advanced AI models. Users can upload resumes in PDF or DOCX format and receive intelligent insights including profile summaries, skill gap analysis, ATS optimization suggestions, career recommendations, and overall resume scoring.
 
+---
+
+## 🚀 Features
+
+- Upload resumes in `.pdf` and `.docx` formats
+- AI-generated resume analysis
+- Profile summary generation
+- Skill gap and weakness detection
+- ATS optimization suggestions
+- Career role recommendations
+- Resume scoring system
+- Modern responsive UI/UX
+- Fast and seamless analysis workflow
 
 ---
 
-Features
+## 🛠️ Tech Stack
 
-Upload resumes in .pdf and .docx formats
+### Frontend
+- React.js
+- Vite
+- Axios
+- CSS
 
-AI-generated resume analysis
+### Backend
+- Python
+- Flask
+- Flask-CORS
 
-Profile summary generation
-
-Skill gap and weakness detection
-
-ATS optimization suggestions
-
-Career role recommendations
-
-Resume scoring system
-
-Modern responsive UI/UX
-
-Fast and seamless analysis workflow
-
-
+### AI & Parsing
+- Google Gemini API (`gemini-2.5-flash`)
+- pdfplumber
+- python-docx
 
 ---
 
-Tech Stack
+## 📌 Project Architecture
 
-Frontend
-
-React.js
-
-Vite
-
-Axios
-
-CSS
-
-
-Backend
-
-Python
-
-Flask
-
-Flask-CORS
-
-
-AI & Parsing
-
-Google Gemini API (gemini-2.5-flash)
-
-pdfplumber
-
-python-docx
-
-
-
----
-
-Project Architecture
-
+```text
 Frontend (React + Vite)
         ↓
 Axios API Request
@@ -76,137 +52,138 @@ Resume Parsing (PDF/DOCX)
 Google Gemini AI Analysis
         ↓
 JSON Response to Frontend
-
+```
 
 ---
 
-Installation & Setup
+## ⚙️ Installation & Setup
 
-Clone the Repository
+### Clone the Repository
 
+```bash
 git clone https://github.com/your-username/astracv.git
 cd astracv
-
+```
 
 ---
 
-Backend Setup
+# 🔧 Backend Setup
 
-Navigate to Backend
+### Navigate to Backend
 
+```bash
 cd backend
+```
 
-Create Virtual Environment
+### Create Virtual Environment
 
+```bash
 python -m venv venv
+```
 
-Activate Virtual Environment
+### Activate Virtual Environment
 
-Windows
-
+#### Windows
+```bash
 venv\Scripts\activate
+```
 
-Mac/Linux
-
+#### Mac/Linux
+```bash
 source venv/bin/activate
+```
 
-Install Dependencies
+### Install Dependencies
 
+```bash
 pip install -r requirements.txt
+```
 
-Add Environment Variables
+### Add Environment Variables
 
-Create a .env file inside the backend folder:
+Create a `.env` file inside the backend folder:
 
+```env
 GEMINI_API_KEY=your_api_key_here
+```
 
-Run Backend Server
+### Run Backend Server
 
+```bash
 python app.py
-
+```
 
 ---
 
-Frontend Setup
+# 💻 Frontend Setup
 
-Navigate to Frontend
+### Navigate to Frontend
 
+```bash
 cd frontend
+```
 
-Install Dependencies
+### Install Dependencies
 
+```bash
 npm install
+```
 
-Run Frontend
+### Run Frontend
 
+```bash
 npm run dev
-
+```
 
 ---
 
-API Endpoint
+## 📡 API Endpoint
 
-Analyze Resume
+### Analyze Resume
 
+```http
 POST /analyze
+```
 
-Request
+### Request
+- FormData containing resume file
 
-FormData containing resume file
+### Response
 
-
-Response
-
+```json
 {
   "resume_analysis": "AI Generated Analysis"
 }
-
-
----
-
-Future Improvements
-
-Authentication System
-
-Resume History Dashboard
-
-Downloadable Analysis Reports
-
-Interview Question Suggestions
-
-AI Chat Assistant
-
-Resume Builder Integration
-
-ATS Compatibility Checker
-
-Multi-theme UI Support
-
-
+```
 
 ---
 
-Skills Demonstrated
+## 🔮 Future Improvements
 
-AI/LLM Integration
-
-REST API Development
-
-Full Stack Development
-
-Prompt Engineering
-
-File Handling & Parsing
-
-Responsive UI/UX Design
-
-Frontend & Backend Integration
-
-
+- Authentication System
+- Resume History Dashboard
+- Downloadable Analysis Reports
+- Interview Question Suggestions
+- AI Chat Assistant
+- Resume Builder Integration
+- ATS Compatibility Checker
+- Multi-theme UI Support
 
 ---
 
-Author
+## 🧠 Skills Demonstrated
 
-Tanmay Jain
+- AI/LLM Integration
+- REST API Development
+- Full Stack Development
+- Prompt Engineering
+- File Handling & Parsing
+- Responsive UI/UX Design
+- Frontend & Backend Integration
+
+---
+
+## 👨‍💻 Author
+
+**Tanmay Jain**  
 B.Tech CSE Student | Full Stack & AI Enthusiast
