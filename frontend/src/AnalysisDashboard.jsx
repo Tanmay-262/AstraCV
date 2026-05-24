@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, AlertTriangle, Compass, Briefcase, Calendar, Sparkles, Clock, FileText } from "lucide-react";
+import ScoreBanner from "./ScoreBanner";
+import { User, Sparkles, AlertTriangle, Briefcase, Target, CheckCircle2, Plus, FileText, Calendar } from "lucide-react";
 
-const AnalysisDashboard = ({ analysis }) => {
+const AnalysisDashboard = ({ analysis, onNewAnalysis, candidateName }) => {
   const [data, setData] = useState(null);
   const [isLegacy, setIsLegacy] = useState(false);
 
@@ -9,8 +10,11 @@ const AnalysisDashboard = ({ analysis }) => {
     if (!analysis) return;
     
     try {
-      // Try to parse the result as JSON
-      const parsed = JSON.parse(analysis.analysis_result);
+      // Direct JSON object if parsed by backend, or string parse
+      const parsed = typeof analysis.analysis_result === "string" 
+        ? JSON.parse(analysis.analysis_result) 
+        : analysis.analysis_result;
+        
       setData(parsed);
       setIsLegacy(false);
     } catch (e) {
@@ -20,249 +24,223 @@ const AnalysisDashboard = ({ analysis }) => {
     }
   }, [analysis]);
 
-  if (!analysis) {
-    return (
-      <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", height: "70vh", color: "var(--text-muted)" }}>
-        <div style={{ textAlign: "center" }}>
-          <FileText size={48} style={{ color: "var(--text-dark)", marginBottom: "16px" }} />
-          <p>Select a resume from the history or upload a new one to begin analysis.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!analysis) return null;
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-US", {
-      weekday: "long",
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
-  // SVG Gauge calculations
-  const radius = 50;
-  const strokeWidth = 8;
-  const circumference = 2 * Math.PI * radius;
-  const score = data?.overall_score || 0;
-  const strokeDashoffset = circumference - (score / 10) * circumference;
-
-  // Determine score color class
-  const getScoreColor = (num) => {
-    if (num >= 8) return "var(--success)";
-    if (num >= 6) return "var(--primary)";
-    return "var(--warning)";
-  };
-
-  const getScoreGlow = (num) => {
-    if (num >= 8) return "var(--success-glow)";
-    if (num >= 6) return "var(--primary-glow)";
-    return "var(--warning-glow)";
-  };
-
   return (
-    <div className="animate-slide-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Header Panel */}
+    <div className="animate-slide-in" style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%" }}>
+      
+      {/* 1. Header Greeting with "Analyze another +" action button */}
       <div
-        className="premium-card"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          width: "100%",
           flexWrap: "wrap",
-          gap: "20px",
-          background: "linear-gradient(135deg, rgba(24, 24, 27, 0.9) 0%, rgba(9, 9, 11, 0.9) 100%)",
+          gap: "16px",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                backgroundColor: "var(--primary-glow)",
-                color: "var(--primary)",
-                fontSize: "0.75rem",
-                fontWeight: "700",
-                textTransform: "uppercase",
-                padding: "4px 10px",
-                borderRadius: "20px",
-                letterSpacing: "0.05em",
-                border: "1px solid rgba(99, 102, 241, 0.2)",
-              }}
-            >
-              Evaluation Complete
-            </span>
-          </div>
-          <h1 style={{ fontSize: "2rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "8px" }}>
-            {analysis.filename}
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <h1 style={{ fontSize: "2rem", fontWeight: "800", color: "var(--text-main)", fontFamily: "var(--font-heading)" }}>
+            Hello, {data?.candidate_name ? data.candidate_name.split(" ")[0] : (candidateName ? candidateName.split(" ")[0] : "Guest User")}! 👋
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Calendar size={14} color="var(--text-dark)" />
-              {formatDate(analysis.created_at)}
+          <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
+            Upload your resume and get AI-powered insights instantly.
+          </p>
+        </div>
+
+        <button
+          onClick={onNewAnalysis}
+          style={{
+            background: "none",
+            border: "1px solid var(--primary)",
+            color: "var(--primary)",
+            borderRadius: "20px",
+            padding: "8px 20px",
+            fontSize: "0.85rem",
+            fontWeight: "700",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontFamily: "var(--font-heading)",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--primary-glow)";
+            e.currentTarget.style.transform = "translateY(-1px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.transform = "translateY(0)";
+          }}
+        >
+          <span>Analyze another</span>
+          <Plus size={14} />
+        </button>
+      </div>
+
+      {/* Active File Name metadata block */}
+      <div
+        className="premium-card"
+        style={{
+          padding: "16px 24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          border: "1px solid var(--border-card)",
+          backgroundColor: "var(--bg-card)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "8px",
+              backgroundColor: "rgba(239, 68, 68, 0.08)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FileText size={18} color="var(--error)" />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontWeight: "700", fontSize: "0.92rem", color: "var(--text-main)" }}>
+              {analysis.filename}
+            </span>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-dark)", fontWeight: "500" }}>
+              Uploaded {formatDate(analysis.created_at)}
             </span>
           </div>
         </div>
+        
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            backgroundColor: "var(--success-glow)",
+            color: "var(--success)",
+            fontSize: "0.75rem",
+            fontWeight: "700",
+            padding: "4px 10px",
+            borderRadius: "20px",
+            border: "1px solid rgba(16, 185, 129, 0.12)",
+          }}
+        >
+          <CheckCircle2 size={12} strokeWidth={2.5} />
+          <span>Analyzed</span>
+        </span>
       </div>
 
       {isLegacy ? (
-        /* Legacy plain text renderer */
+        /* Legacy markdown backup renderer */
         <div className="premium-card" style={{ whiteSpace: "pre-wrap", lineHeight: "1.7" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--border-card)", paddingBottom: "12px", marginBottom: "16px" }}>
+          <h3 style={{ fontSize: "1.2rem", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
             <Sparkles size={18} color="var(--primary)" />
-            <h3 style={{ fontSize: "1.1rem" }}>Legacy Analysis Report</h3>
-          </div>
-          <pre
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "0.95rem",
-              color: "var(--text-muted)",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
+            Legacy Analysis Report
+          </h3>
+          <pre style={{ fontFamily: "var(--font-body)", fontSize: "0.95rem", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
             {data}
           </pre>
         </div>
       ) : data ? (
-        /* Premium Dashboard layout */
+        /* Premium Dashboard layout matching the Mockup */
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Top Row: Score & Summary */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "240px 1fr",
-              gap: "24px",
-            }}
-            className="mobile-single-column"
-          >
-            {/* Score circle */}
-            <div
-              className="premium-card"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "16px",
-                textAlign: "center",
-              }}
-            >
-              <h3 style={{ fontSize: "0.95rem", color: "var(--text-muted)", fontWeight: "500" }}>Overall Score</h3>
-              <div style={{ position: "relative", width: "120px", height: "120px", display: "flex", alignItems: "center", justifyItems: "center" }}>
-                <svg width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
-                  {/* Gray background track */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={radius}
-                    fill="transparent"
-                    stroke="rgba(255, 255, 255, 0.05)"
-                    strokeWidth={strokeWidth}
-                  />
-                  {/* Colored progress bar */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={radius}
-                    fill="transparent"
-                    stroke={getScoreColor(score)}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    style={{
-                      transition: "stroke-dashoffset 0.8s ease-in-out",
-                    }}
-                  />
-                </svg>
-                {/* Score numbers inside */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <span style={{ fontSize: "1.8rem", fontWeight: "800", color: getScoreColor(score), fontFamily: "var(--font-heading)" }}>
-                    {score}
-                  </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-dark)", fontWeight: "600", marginTop: "-4px" }}>
-                    / 10
-                  </span>
-                </div>
-              </div>
-              
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  padding: "4px 12px",
-                  borderRadius: "12px",
-                  backgroundColor: getScoreGlow(score),
-                  color: getScoreColor(score),
-                  fontWeight: "600",
-                }}
-              >
-                {score >= 8 ? "Excellent Fit" : score >= 6 ? "Solid Draft" : "Requires Work"}
-              </div>
-            </div>
+          
+          {/* 2. Score Banner (Radial percentage dial + custom SVG trophy) */}
+          <ScoreBanner
+            score={data.overall_score}
+            headline={data.headline}
+            summary={data.summary}
+          />
 
-            {/* Summary card */}
-            <div className="premium-card" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--primary)" }}>
-                <Compass size={18} />
-                <h3 style={{ fontSize: "1.1rem", fontFamily: "var(--font-heading)" }}>Executive Summary</h3>
-              </div>
-              <p
-                style={{
-                  lineHeight: "1.7",
-                  color: "var(--text-muted)",
-                  fontSize: "0.98rem",
-                  fontStyle: "italic",
-                }}
-              >
-                "{data.summary}"
-              </p>
-            </div>
-          </div>
-
-          {/* Middle Row: Strengths and Weaknesses */}
+          {/* 3. 2x2 Insights Cards */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "24px",
             }}
-            className="mobile-single-column"
+            className="mobile-insights-grid"
           >
-            {/* Strengths Card */}
+            {/* Card 1: Profile Summary */}
+            <div
+              className="premium-card"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                borderLeft: "4px solid var(--primary)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--primary-glow)",
+                    color: "var(--primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <User size={18} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "700", fontFamily: "var(--font-heading)" }}>
+                  1. Profile Summary
+                </h3>
+              </div>
+              <p
+                style={{
+                  fontSize: "0.92rem",
+                  lineHeight: "1.6",
+                  color: "var(--text-muted)",
+                }}
+              >
+                {data.summary}
+              </p>
+            </div>
+
+            {/* Card 2: Key Strengths */}
             <div className="premium-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--success)" }}>
-                <CheckCircle2 size={20} />
-                <h3 style={{ fontSize: "1.2rem", fontFamily: "var(--font-heading)" }}>Key Strengths</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--success-glow)",
+                    color: "var(--success)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Sparkles size={18} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "700", fontFamily: "var(--font-heading)" }}>
+                  2. Key Strengths
+                </h3>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {data.strengths?.map((str, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "10px",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(16, 185, 129, 0.03)",
-                      border: "1px solid rgba(16, 185, 129, 0.08)",
-                    }}
-                  >
-                    <CheckCircle2 size={16} color="var(--success)" style={{ marginTop: "3px", flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.92rem", lineHeight: "1.5", color: "var(--text-main)" }}>
+                  <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <CheckCircle2 size={16} color="var(--success)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.88rem", lineHeight: "1.5", color: "var(--text-main)" }}>
                       {str}
                     </span>
                   </div>
@@ -270,29 +248,66 @@ const AnalysisDashboard = ({ analysis }) => {
               </div>
             </div>
 
-            {/* Weaknesses Card */}
+            {/* Card 3: Weaknesses / Missing Skills */}
             <div className="premium-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--warning)" }}>
-                <AlertTriangle size={20} />
-                <h3 style={{ fontSize: "1.2rem", fontFamily: "var(--font-heading)" }}>Areas for Improvement</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(239, 68, 68, 0.08)",
+                    color: "var(--error)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AlertTriangle size={18} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "700", fontFamily: "var(--font-heading)" }}>
+                  3. Weaknesses / Missing Skills
+                </h3>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {data.weaknesses?.map((weak, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "10px",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      backgroundColor: "rgba(245, 158, 11, 0.03)",
-                      border: "1px solid rgba(245, 158, 11, 0.08)",
-                    }}
-                  >
-                    <AlertTriangle size={16} color="var(--warning)" style={{ marginTop: "3px", flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.92rem", lineHeight: "1.5", color: "var(--text-main)" }}>
+                  <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <CheckCircle2 size={16} color="var(--primary)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.88rem", lineHeight: "1.5", color: "var(--text-main)" }}>
                       {weak}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Card 4: Suggested Career Roles */}
+            <div className="premium-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--primary-glow)",
+                    color: "var(--primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Briefcase size={18} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "700", fontFamily: "var(--font-heading)" }}>
+                  4. Suggested Career Roles
+                </h3>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {data.suggested_roles?.map((role, idx) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <CheckCircle2 size={16} color="var(--primary)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.88rem", lineHeight: "1.5", color: "var(--text-main)" }}>
+                      {role}
                     </span>
                   </div>
                 ))}
@@ -300,55 +315,132 @@ const AnalysisDashboard = ({ analysis }) => {
             </div>
           </div>
 
-          {/* Bottom Row: Career Paths */}
-          <div className="premium-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--primary)" }}>
-              <Briefcase size={20} />
-              <h3 style={{ fontSize: "1.2rem", fontFamily: "var(--font-heading)" }}>Suggested Career Roles</h3>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {data.suggested_roles?.map((role, idx) => (
+          {/* 4. Card 5: Recommendations (Full Width Bottom Panel) */}
+          <div
+            className="premium-card"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 200px",
+              gap: "28px",
+              alignItems: "center",
+            }}
+            className="mobile-recommendations-layout"
+          >
+            {/* Left list details */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--primary)" }}>
                 <div
-                  key={idx}
                   style={{
-                    backgroundColor: "rgba(99, 102, 241, 0.05)",
-                    border: "1px solid rgba(99, 102, 241, 0.15)",
-                    borderRadius: "30px",
-                    padding: "8px 16px",
-                    fontSize: "0.9rem",
-                    fontWeight: "550",
-                    color: "#a5b4fc",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--primary-glow)",
+                    color: "var(--primary)",
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                    transition: "all 0.2s ease",
-                    cursor: "default",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--primary)";
-                    e.currentTarget.style.backgroundColor = "rgba(99, 102, 241, 0.1)";
-                    e.currentTarget.style.transform = "scale(1.03)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.15)";
-                    e.currentTarget.style.backgroundColor = "rgba(99, 102, 241, 0.05)";
-                    e.currentTarget.style.transform = "scale(1)";
+                    justifyContent: "center",
                   }}
                 >
-                  <Briefcase size={14} color="var(--primary)" />
-                  {role}
+                  <Target size={18} />
                 </div>
-              ))}
+                <h3 style={{ fontSize: "1.15rem", fontWeight: "700", fontFamily: "var(--font-heading)", color: "var(--text-main)" }}>
+                  5. Recommendations
+                </h3>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {data.recommendations?.map((rec, idx) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                    <CheckCircle2 size={16} color="var(--primary)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.9rem", lineHeight: "1.5", color: "var(--text-main)" }}>
+                      {rec}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right SVG Clipboard vector graphic with foliage */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              className="clipboard-container"
+            >
+              <svg width="180" height="150" viewBox="0 0 180 150" fill="none">
+                {/* Foliage/Leaves background vectors */}
+                <path d="M150,110 C160,90 145,70 160,50 C175,70 170,90 150,110 Z" fill="var(--success)" opacity="0.15" />
+                <path d="M20,120 C10,105 25,90 15,75 C5,90 10,105 20,120 Z" fill="var(--success)" opacity="0.1" />
+                <path d="M135,130 C145,115 135,95 145,80 C155,95 150,115 135,130 Z" fill="var(--primary)" opacity="0.08" />
+
+                {/* Ground Shadow */}
+                <ellipse cx="90" cy="135" rx="55" ry="8" fill="var(--bg-input)" opacity="0.6" />
+
+                {/* Floating vector star */}
+                <g transform="translate(145, 25) scale(0.65)" className="float-animation">
+                  <path d="M10,0 L13,7 L20,7 L14,11 L16,18 L10,14 L4,18 L6,11 L0,7 L7,7 Z" fill="#60a5fa" opacity="0.8"/>
+                </g>
+
+                {/* Clipboard body */}
+                <g transform="translate(45, 10)">
+                  {/* Board shadow */}
+                  <rect x="3" y="13" width="84" height="110" rx="10" fill="var(--border-card)" opacity="0.4" />
+                  
+                  {/* Board base */}
+                  <rect x="0" y="10" width="84" height="110" rx="10" fill="var(--bg-card)" stroke="var(--border-card)" strokeWidth="1.5" />
+                  
+                  {/* Paper sheet */}
+                  <rect x="8" y="24" width="68" height="84" rx="4" fill="var(--bg-main)" />
+                  
+                  {/* Checked Lists lines */}
+                  {/* Check 1 */}
+                  <path d="M16,38 L19,41 L25,35" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="32" y="36" width="34" height="3" rx="1.5" fill="var(--border-hover)" />
+                  <rect x="32" y="42" width="22" height="2" rx="1" fill="var(--border-card)" />
+
+                  {/* Check 2 */}
+                  <path d="M16,56 L19,59 L25,53" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="32" y="54" width="34" height="3" rx="1.5" fill="var(--border-hover)" />
+                  <rect x="32" y="60" width="26" height="2" rx="1" fill="var(--border-card)" />
+
+                  {/* Check 3 */}
+                  <path d="M16,74 L19,77 L25,71" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="32" y="72" width="34" height="3" rx="1.5" fill="var(--border-hover)" />
+                  <rect x="32" y="78" width="18" height="2" rx="1" fill="var(--border-card)" />
+
+                  {/* Check 4 */}
+                  <path d="M16,92 L19,95 L25,89" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="32" y="90" width="34" height="3" rx="1.5" fill="var(--border-hover)" />
+
+                  {/* Top Clamp */}
+                  <path d="M26,10 C26,7 30,5 34,5 L50,5 C54,5 58,7 58,10 Z" fill="var(--border-hover)" />
+                  <rect x="30" y="10" width="24" height="6" rx="2" fill="var(--primary)" />
+                  <circle cx="42" cy="13" r="1.5" fill="#ffffff" />
+                </g>
+              </svg>
             </div>
           </div>
         </div>
       ) : null}
 
       <style>{`
+        .mobile-recommendations-layout {
+          display: grid;
+          grid-template-columns: 1fr 200px;
+          gap: 28px;
+          align-items: center;
+        }
         @media (max-width: 900px) {
-          .mobile-single-column {
+          .mobile-insights-grid {
             grid-template-columns: 1fr !important;
+          }
+          .mobile-recommendations-layout {
+            grid-template-columns: 1fr !important;
+          }
+          .clipboard-container {
+            display: none !important;
           }
         }
       `}</style>

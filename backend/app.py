@@ -8,6 +8,8 @@ import google.generativeai as genai
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 import json
+from werkzeug.security import generate_password_hash, check_password_hash
+from auth import generate_token, token_required
 
 app = Flask(__name__)
 CORS(app)
@@ -20,7 +22,20 @@ db = SQLAlchemy(app)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Database Model
+# Database Models
+class User(db.Model):
+    """
+    Represents a user in the database.
+    Stores email, hashed password, and relation to resume analyses.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    analyses = db.relationship('ResumeAnalysis', backref='user', lazy=True)
+
 class ResumeAnalysis(db.Model):
     """
     Represents a single evaluated resume document in the database.
@@ -32,6 +47,7 @@ class ResumeAnalysis(db.Model):
     raw_text = db.Column(db.Text, nullable=False)
     analysis_result = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 # Create tables if they don't exist
 with app.app_context():
@@ -56,8 +72,78 @@ def extract_text_from_docx(file_path):
     doc = docx.Document(file_path)
     return "\n".join([para.text for para in doc.paragraphs])
 
+@app.route('/auth/signup', methods=['POST'])
+def signup():
+    try:
+        data = request.get_json()
+        if not data or not data.get('name') or not data.get('email') or not data.get('password'):
+            return jsonify({"error": "Missing required fields"}), 400
+            
+        name = data.get('name').strip()
+        email = data.get('email').strip().lower()
+        password = data.get('password')
+        
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({"error": "User with this email already exists"}), 409
+            
+        # Hash password and save
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(
+            name=name,
+            email=email,
+            password_hash=hashed_password
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Automatically generate token for signup
+        token = generate_token(new_user.id)
+        
+        return jsonify({
+            "message": "User registered successfully",
+            "token": token,
+            "user": {
+                "id": new_user.id,
+                "name": new_user.name,
+                "email": new_user.email
+            }
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({"error": "Missing required fields"}), 400
+            
+        email = data.get('email').strip().lower()
+        password = data.get('password')
+        
+        user = User.query.filter_by(email=email).first()
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid email or password"}), 401
+            
+        token = generate_token(user.id)
+        
+        return jsonify({
+            "message": "Login successful",
+            "token": token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/analyze', methods=['POST'])
-def analyze_resume():
+@token_required
+def analyze_resume(current_user):
     try:
         if 'file' not in request.files:
             return jsonify({"error": "No file uploaded"}), 400
@@ -130,7 +216,8 @@ def analyze_resume():
         new_analysis = ResumeAnalysis(
             filename=file.filename,
             raw_text=text,
-            analysis_result=response.text
+            analysis_result=response.text,
+            user_id=current_user.id
         )
         db.session.add(new_analysis)
         db.session.commit()
@@ -143,9 +230,10 @@ def analyze_resume():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/analyses', methods=['GET'])
-def get_analyses():
+@token_required
+def get_analyses(current_user):
     try:
-        analyses = ResumeAnalysis.query.order_by(ResumeAnalysis.created_at.desc()).all()
+        analyses = ResumeAnalysis.query.filter_by(user_id=current_user.id).order_by(ResumeAnalysis.created_at.desc()).all()
         result = []
         for a in analyses:
             score = None
@@ -172,9 +260,10 @@ def get_analyses():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/analyses/<int:analysis_id>', methods=['GET'])
-def get_analysis_detail(analysis_id):
+@token_required
+def get_analysis_detail(current_user, analysis_id):
     try:
-        analysis = ResumeAnalysis.query.filter_by(id=analysis_id).first()
+        analysis = ResumeAnalysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
         if not analysis:
             return jsonify({"error": "Analysis not found"}), 404
             

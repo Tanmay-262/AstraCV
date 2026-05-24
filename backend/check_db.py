@@ -1,3 +1,6 @@
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 from app import app, db, ResumeAnalysis
 
 with app.app_context():
