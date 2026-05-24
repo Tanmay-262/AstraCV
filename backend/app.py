@@ -30,10 +30,6 @@ db.init_app(app)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Create tables if they don't exist
-with app.app_context():
-    db.create_all()
-
 def extract_text_from_pdf(file_path):
     """
     Opens a PDF document at file_path using pdfplumber, iterates 
@@ -52,6 +48,31 @@ def extract_text_from_docx(file_path):
     """
     doc = docx.Document(file_path)
     return "\n".join([para.text for para in doc.paragraphs])
+
+# Test imports route to diagnose packaging issues in serverless environment
+@app.route('/test-imports', methods=['GET'])
+def test_imports():
+    results = {}
+    packages = [
+        ("flask", "from flask import Flask"),
+        ("flask_cors", "import flask_cors"),
+        ("pdfplumber", "import pdfplumber"),
+        ("docx", "import docx"),
+        ("google-generativeai", "import google.generativeai"),
+        ("flask_sqlalchemy", "from flask_sqlalchemy import SQLAlchemy"),
+        ("psycopg2", "import psycopg2"),
+        ("pg8000", "import pg8000"),
+        ("jwt", "import jwt"),
+        ("extensions", "from extensions import db"),
+        ("models", "from models import User, ResumeAnalysis"),
+    ]
+    for name, stmt in packages:
+        try:
+            exec(stmt)
+            results[name] = "OK"
+        except Exception as e:
+            results[name] = f"FAILED: {str(e)}"
+    return jsonify(results)
 
 @app.route('/auth/signup', methods=['POST'])
 def signup():
