@@ -1,43 +1,34 @@
 import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
-import traceback
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import pdfplumber
+import docx
+from dotenv import load_dotenv
+import google.generativeai as genai
+from datetime import datetime, timezone
+import json
+from werkzeug.security import generate_password_hash, check_password_hash
+from auth import generate_token, token_required
 
-try:
-    from flask import Flask, request, jsonify
-    from flask_cors import CORS
-    import pdfplumber
-    import docx
-    import os
-    from dotenv import load_dotenv
-    import google.generativeai as genai
-    from flask_sqlalchemy import SQLAlchemy
-    from datetime import datetime, timezone
-    import json
-    from werkzeug.security import generate_password_hash, check_password_hash
-    from auth import generate_token, token_required
+app = Flask(__name__)
+CORS(app)
+load_dotenv()
 
-    app = Flask(__name__)
-    CORS(app)
-    load_dotenv()
+from extensions import db
+from models import User, ResumeAnalysis
 
-    from extensions import db
-    from models import User, ResumeAnalysis
+# Database Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
-    # Database Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-    # Create tables if they don't exist
-    with app.app_context():
-        db.create_all()
-except Exception as e:
-    print("FATAL IMPORT ERROR IN app.py:", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
-    raise e
+# Create tables if they don't exist
+with app.app_context():
+    db.create_all()
 
 def extract_text_from_pdf(file_path):
     """
