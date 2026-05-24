@@ -41,7 +41,7 @@ function App() {
   const fetchHistory = async () => {
     if (!user) return;
     try {
-      const res = await fetch("http://127.0.0.1:5000/analyses", {
+      const res = await fetch("/analyses", {
         headers: {
           "Authorization": `Bearer ${user.token}`
         }
@@ -62,7 +62,7 @@ function App() {
     setActiveId(id);
     setActiveTab("dashboard"); // Always jump to dashboard when viewing report
     try {
-      const res = await fetch(`http://127.0.0.1:5000/analyses/${id}`, {
+      const res = await fetch(`/analyses/${id}`, {
         headers: {
           "Authorization": `Bearer ${user.token}`
         }
